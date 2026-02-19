@@ -1,0 +1,53 @@
+name: Build Firmware
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Create config from example
+        run: |
+          cp src/config.h.example src/config.h
+
+      - name: Build firmware
+        run: |
+          pio run
+
+      - name: Check firmware size
+        run: |
+          echo "## Firmware Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Memory | Used | Total | Percentage |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------|-------|------------|" >> $GITHUB_STEP_SUMMARY
+          # Extract size info from build
+          pio run 2>&1 | grep -E "RAM:|Flash:" | while read line; do
+            echo "| $line |" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: |
+            .pio/build/xiao_esp32c3/firmware.bin
+            .pio/build/xiao_esp32c3/firmware.elf
+          retention-days: 30

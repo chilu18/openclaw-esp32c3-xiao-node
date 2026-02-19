@@ -1,0 +1,76 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Create config from example
+        run: |
+          cp src/config.h.example src/config.h
+
+      - name: Run PlatformIO Check
+        run: |
+          pio check --skip-packages
+
+  cppcheck:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Create config from example
+        run: |
+          cp src/config.h.example src/config.h
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=warning,style,performance \
+                   --suppress=missingIncludeSystem \
+                   --error-exitcode=1 \
+                   --inline-suppr \
+                   src/
+
+  format-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Check code formatting
+        run: |
+          find src -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror || {
+            echo "::warning::Code formatting issues found. Run 'clang-format -i src/*.cpp src/*.h' to fix."
+            exit 0  # Don't fail the build, just warn
+          }

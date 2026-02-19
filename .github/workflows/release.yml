@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Create config from example
+        run: |
+          cp src/config.h.example src/config.h
+
+      - name: Build firmware
+        run: |
+          pio run
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Rename firmware files
+        run: |
+          mkdir -p release
+          cp .pio/build/xiao_esp32c3/firmware.bin release/openclaw-esp32c3-xiao-${{ steps.version.outputs.VERSION }}.bin
+          cp .pio/build/xiao_esp32c3/firmware.elf release/openclaw-esp32c3-xiao-${{ steps.version.outputs.VERSION }}.elf
+
+      - name: Generate checksums
+        run: |
+          cd release
+          sha256sum *.bin *.elf > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.bin
+            release/*.elf
+            release/checksums.txt
+          generate_release_notes: true
+          body: |
+            ## OpenClaw ESP32-C3 XIAO Node ${{ steps.version.outputs.VERSION }}
+            
+            ### Installation
+            
+            1. Download `openclaw-esp32c3-xiao-${{ steps.version.outputs.VERSION }}.bin`
+            2. Flash using esptool:
+               ```bash
+               esptool.py --port /dev/ttyACM0 write_flash 0x0 openclaw-esp32c3-xiao-${{ steps.version.outputs.VERSION }}.bin
+               ```
+            
+            Or build from source with your WiFi credentials configured.
+            
+            ### Verify Download
+            ```bash
+            sha256sum -c checksums.txt
+            ```

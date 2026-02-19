@@ -1,0 +1,61 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// ============================================
+// WiFi Configuration
+// ============================================
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// ============================================
+// OpenClaw Gateway Configuration
+// ============================================
+#define GATEWAY_HOST "192.168.1.100"  // Your OpenClaw Gateway IP address
+#define GATEWAY_PORT 18789            // Default OpenClaw Gateway port
+#define GATEWAY_TOKEN ""              // Optional: Set during pairing
+
+// ============================================
+// Device Identity
+// ============================================
+#define DEVICE_NAME "xiao-esp32c3-node"  // Name shown in OpenClaw
+#define DEVICE_TYPE "esp32c3"            // Device type identifier
+
+// ============================================
+// Hardware Pins (XIAO ESP32-C3 + Expansion Board)
+// ============================================
+// These are the default pins for the XIAO Expansion Board
+// Only change if using custom wiring
+
+#define PIN_BUTTON D1       // User button (GPIO3) - Active LOW
+#define PIN_BUZZER D3       // Passive buzzer (GPIO5) - PWM output
+#define PIN_I2C_SDA D4      // I2C SDA for OLED/RTC (GPIO6)
+#define PIN_I2C_SCL D5      // I2C SCL for OLED/RTC (GPIO7)
+#define PIN_SD_CS D2        // SD Card CS (GPIO4)
+#define PIN_ADC A0          // Analog input (GPIO2)
+
+// ============================================
+// Display Configuration
+// ============================================
+#define OLED_WIDTH 128
+#define OLED_HEIGHT 64
+#define OLED_ADDRESS 0x3C   // I2C address for SSD1306
+
+// ============================================
+// RTC Configuration (PCF8563)
+// ============================================
+#define RTC_ADDRESS 0x51    // I2C address for PCF8563
+
+// ============================================
+// Timing Configuration
+// ============================================
+#define HEARTBEAT_INTERVAL_MS 30000   // Send heartbeat every 30 seconds
+#define RECONNECT_DELAY_MS 5000       // Wait 5 seconds before reconnect
+#define DEBOUNCE_MS 50                // Button debounce time
+
+// ============================================
+// Debug Configuration
+// ============================================
+// Uncomment to enable verbose debug output
+// #define DEBUG_VERBOSE
+
+#endif // CONFIG_H

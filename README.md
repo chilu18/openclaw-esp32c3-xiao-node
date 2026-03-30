@@ -297,6 +297,30 @@ The current GitHub release workflow builds the production firmware automatically
 - Open an issue: https://github.com/chilu18/openclaw-esp32c3-xiao-node/issues
 - Submit a pull request: https://github.com/chilu18/openclaw-esp32c3-xiao-node/pulls
 
+## References
+
+External references:
+
+- Cloudflare. "Publish a Self-Hosted Application to the Internet." *Cloudflare One Docs*. Accessed March 30, 2026. https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/.
+- Cloudflare. "Service Tokens." *Cloudflare One Docs*. Accessed March 30, 2026. https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/.
+- OpenClaw. "Gateway Protocol." *OpenClaw Docs*. Accessed March 30, 2026. https://docs.openclaw.ai/gateway/protocol.
+- OpenClaw. "Gateway Runbook." *OpenClaw Docs*. Accessed March 30, 2026. https://docs.openclaw.ai/gateway/index.
+- OpenClaw. "Nodes." *OpenClaw Docs*. Accessed March 30, 2026. https://docs.openclaw.ai/nodes.
+- OpenClaw. "nodes." *OpenClaw CLI Reference*. Accessed March 30, 2026. https://docs.openclaw.ai/cli/nodes.
+
+Internal implementation references:
+
+- HeySalad Inc. *OpenClaw ESP32-C3 XIAO Node Firmware*. Authored by Peter Machona. Internal source code, March 30, 2026.
+- HeySalad Inc. *OpenClaw ESP32-C3 XIAO Node Configuration Template*. Authored by Peter Machona. Internal source code, March 30, 2026.
+- HeySalad Inc. *OpenClaw ESP32-C3 XIAO Node Default Configuration*. Authored by Peter Machona. Internal source code, March 30, 2026.
+- HeySalad Inc. *OpenClaw ESP32-C3 XIAO Node Hardware Smoke Test*. Authored by Peter Machona. Internal source code, March 30, 2026.
+- HeySalad Inc. *Protected Gateway Tunnel Configuration*. Authored by Peter Machona. Internal configuration source, March 30, 2026.
+- HeySalad Inc. *Protected OpenClaw Gateway Configuration*. Authored by Peter Machona. Internal configuration source, March 30, 2026.
+
+Public repo note:
+
+- Internal references above intentionally redact hostnames, secrets, tokens, device identifiers, and environment-specific paths.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).

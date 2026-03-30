@@ -1,33 +1,32 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_DEFAULTS_H
+#define CONFIG_DEFAULTS_H
 
 // ============================================
 // WiFi Configuration
 // ============================================
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
 // ============================================
-// OpenClaw Gateway Configuration
+// Gateway + Cloudflare Access
 // ============================================
-// Public hostname exposed through Cloudflare Tunnel / Access.
 #define GATEWAY_HOST "lucia-openclaw-dashboard.heysalad.app"
 #define GATEWAY_PORT 443
 #define GATEWAY_PATH "/"
 #define GATEWAY_USE_SSL 1
 
 // Shared bootstrap token used only until the gateway issues a device token.
-#define GATEWAY_BOOTSTRAP_TOKEN "YOUR_BOOTSTRAP_GATEWAY_TOKEN"
+#define GATEWAY_BOOTSTRAP_TOKEN ""
 
-// Cloudflare Access service token headers for the ESP32-C3 device.
-#define CLOUDFLARE_ACCESS_CLIENT_ID "YOUR_ACCESS_CLIENT_ID"
-#define CLOUDFLARE_ACCESS_CLIENT_SECRET "YOUR_ACCESS_CLIENT_SECRET"
+// Cloudflare Access service token for the public dashboard hostname.
+#define CLOUDFLARE_ACCESS_CLIENT_ID ""
+#define CLOUDFLARE_ACCESS_CLIENT_SECRET ""
 
-// Optional: define the PEM-encoded origin/root certificate to avoid insecure TLS.
-// #define GATEWAY_CA_CERT_PEM "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"
+// Optional: if you want certificate pinning instead of insecure TLS,
+// define GATEWAY_CA_CERT_PEM in config.h with the PEM-encoded root or origin CA.
 
 // ============================================
-// Device Identity / Metadata
+// Device Identity
 // ============================================
 #define DEVICE_CLIENT_ID "esp32c3-node"
 #define DEVICE_DISPLAY_NAME "OpenClaw Node"
@@ -53,8 +52,8 @@
 #define OLED_ADDRESS 0x3C
 
 // ============================================
-// Timing Configuration
+// Timing
 // ============================================
 #define DEBOUNCE_MS 50
 
-#endif  // CONFIG_H
+#endif  // CONFIG_DEFAULTS_H

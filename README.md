@@ -1,190 +1,302 @@
 # OpenClaw ESP32-C3 XIAO Node
 
-A lightweight OpenClaw node firmware for the **Seeed Studio XIAO ESP32-C3** with the **Expansion Board**.
+> OpenClaw node firmware for the Seeed Studio XIAO ESP32-C3 and XIAO Expansion Board, with BLE onboarding, OTP pairing, WiFi provisioning, and Cloudflare Access protected gateway connectivity.
 
-Turn a $12 microcontroller into a fully-functional OpenClaw peripheral node with display, button input, and audio feedback.
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build Firmware](https://img.shields.io/badge/CI-Build%20Firmware-1f6feb)](.github/workflows/build.yml)
+[![Code Quality](https://img.shields.io/badge/CI-Code%20Quality-0a7f3f)](.github/workflows/lint.yml)
+[![GitHub stars](https://img.shields.io/github/stars/chilu18/openclaw-esp32c3-xiao-node?style=social)](https://github.com/chilu18/openclaw-esp32c3-xiao-node/stargazers)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-HeySalad-FFDD00?logo=buy-me-a-coffee&logoColor=000000)](https://buymeacoffee.com/heysalad)
 
-![XIAO ESP32-C3](https://files.seeedstudio.com/wiki/XIAO_WiFi/board-pic.png)
+## What This Repo Contains
 
-## Features
+This repo contains the embedded firmware and supporting project files for a production-style OpenClaw peripheral node.
 
-- 📺 **OLED Display** (128x64) — Show text, status, QR codes
-- 🔘 **Button Input** — Physical button events sent to gateway
-- 🔊 **Buzzer Output** — Audio feedback, tones, melodies
-- 📡 **WiFi Connected** — WebSocket connection to OpenClaw Gateway
-- ⏰ **RTC Support** — Real-time clock with battery backup (coming soon)
-- 💾 **SD Card** — Local storage for logs (coming soon)
+- `src/main.cpp`: production firmware for gateway-connected operation
+- `src/hardware_smoke_test.cpp`: hardware validation firmware for display, RTC, speaker, and button checks
+- `src/config.h.example`: local configuration template for secrets and device settings
+- `src/config.defaults.h`: safe fallback defaults when `src/config.h` is not present
+- `.github/workflows/`: build, lint, and release automation
 
-## Hardware Required
+## What The Firmware Does
 
-| Component | Price | Link |
-|-----------|-------|------|
-| Seeed XIAO ESP32-C3 | ~$5 | [Seeed Studio](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html) |
-| XIAO Expansion Board | ~$8 | [Seeed Studio](https://www.seeedstudio.com/Seeeduino-XIAO-Expansion-board-p-4746.html) |
+- Exposes a BLE peripheral for onboarding from the Sally mobile app
+- Generates and verifies 6-digit OTP pairing codes
+- Accepts WiFi credentials over BLE and stores them in NVS
+- Maintains a stable Ed25519 device identity in flash
+- Connects to an OpenClaw gateway through Cloudflare Access
+- Persists the issued OpenClaw device token after first successful pairing
+- Receives `node.invoke.request` events and answers with `node.invoke.result`
+- Drives the onboard OLED, buzzer, button, GPIO, and ADC features
 
-**Total: ~$13**
+## Hardware
 
-## Pin Mapping
+Required hardware:
+
+- Seeed Studio XIAO ESP32-C3
+- Seeed Studio XIAO Expansion Board
+
+Pin mapping:
 
 | Function | Pin | GPIO | Notes |
 |----------|-----|------|-------|
-| OLED SDA | D4 | GPIO6 | I2C Data |
-| OLED SCL | D5 | GPIO7 | I2C Clock |
-| Button | D1 | GPIO3 | Active LOW, pull-up |
+| OLED SDA | D4 | GPIO6 | I2C data |
+| OLED SCL | D5 | GPIO7 | I2C clock |
+| Button | D1 | GPIO3 | Active LOW |
 | Buzzer | D3 | GPIO5 | PWM output |
-| SD Card CS | D2 | GPIO4 | SPI chip select |
-| ADC Input | A0 | GPIO2 | Analog sensor input |
+| SD Card CS | D2 | GPIO4 | Reserved |
+| ADC Input | A0 | GPIO2 | Analog input |
+
+Hardware note:
+
+- The OLED is driven with U8g2 software I2C on this board because that path is more reliable than the hardware-I2C U8g2 path on the current expansion-board setup.
+
+## Architecture At A Glance
+
+```text
+Sally Mobile App
+  - BLE scan
+  - OTP entry
+  - WiFi provisioning
+          |
+          v
+OpenClaw ESP32-C3 Node
+  - BLE peripheral
+  - OLED status + OTP display
+  - WiFi credentials in NVS
+  - Stable Ed25519 device identity
+          |
+          v
+Cloudflare Access
+  - CF-Access-Client-Id
+  - CF-Access-Client-Secret
+          |
+          v
+OpenClaw Gateway
+  - connect.challenge
+  - challenge signature verification
+  - device pairing approval
+  - issued device token
+```
 
 ## Quick Start
 
-### 1. Install PlatformIO
+### 1. Clone the repo
 
 ```bash
-pip install platformio
+git clone https://github.com/chilu18/openclaw-esp32c3-xiao-node.git
+cd openclaw-esp32c3-xiao-node
 ```
 
-### 2. Clone and Configure
+### 2. Create local config
 
 ```bash
-git clone https://github.com/petermm/openclaw-esp32c3-xiao-node.git
-cd openclaw-esp32c3-xiao-node
 cp src/config.h.example src/config.h
 ```
 
-Edit `src/config.h` with your settings:
+Fill in at least:
 
-```cpp
-#define WIFI_SSID "YourWiFiNetwork"
-#define WIFI_PASSWORD "YourWiFiPassword"
-#define GATEWAY_HOST "192.168.1.100"  // Your OpenClaw Gateway IP
-#define GATEWAY_PORT 18789
-```
+- `GATEWAY_BOOTSTRAP_TOKEN`
+- `CLOUDFLARE_ACCESS_CLIENT_ID`
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
 
-### 3. Build and Flash
+Optional:
+
+- `WIFI_SSID` and `WIFI_PASSWORD` for bench testing without BLE provisioning
+- `GATEWAY_CA_CERT_PEM` if you want certificate pinning instead of relying on the default TLS path
+
+### 3. Build the production firmware
 
 ```bash
-# Connect XIAO ESP32-C3 via USB
-pio run --target upload
+pio run -e xiao_esp32c3
+```
 
-# Monitor serial output
+### 4. Flash the production firmware
+
+```bash
+pio run -e xiao_esp32c3 -t upload
 pio device monitor
 ```
 
-### 4. Pair with Gateway
+### 5. Pair and provision from mobile
 
-On your OpenClaw gateway:
+From the Sally mobile app:
 
-```bash
-openclaw nodes pending
-openclaw nodes approve <request-id>
-openclaw nodes list
-```
+1. Scan and connect over BLE
+2. Request OTP and enter the 6-digit code shown on the OLED
+3. Send WiFi credentials over BLE
+4. Let the node connect to the gateway
+5. Approve the pairing request on the gateway host if required
 
-## Node Commands
+### 6. Approve first-time node pairing
 
-Once paired, the gateway can invoke these commands:
-
-### Display
+On the gateway host:
 
 ```bash
-# Show text on OLED
-openclaw nodes invoke --node xiao --command canvas.show --params '{"text":"Hello!"}'
-
-# Clear display
-openclaw nodes invoke --node xiao --command canvas.clear
+openclaw devices list
+openclaw devices approve <request-id>
 ```
 
-### Audio
+After first successful pairing, the firmware stores the issued device token in NVS and prefers that token on reconnect.
+
+## Hardware Smoke Test
+
+Use the smoke-test image when you want to validate hardware before debugging gateway or auth issues.
+
+Build:
 
 ```bash
-# Simple beep
-openclaw nodes invoke --node xiao --command audio.beep --params '{"frequency":1000,"duration":200}'
-
-# Play melody
-openclaw nodes invoke --node xiao --command audio.tone --params '{"melody":[{"f":262,"d":200},{"f":330,"d":200},{"f":392,"d":400}]}'
+pio run -e hardware_smoke_test
 ```
 
-### System
+Flash:
 
 ```bash
-# Get device info
-openclaw nodes invoke --node xiao --command system.info
+pio run -e hardware_smoke_test -t upload
+pio device monitor
 ```
 
-## Events
+Expected checks:
 
-The node sends events to the gateway:
+- OLED detected on `0x3C`
+- RTC detected on `0x51`
+- speaker test tones
+- button press and release events in serial output
 
-- **Button Press/Release**: `{"event":"input.button","state":"pressed"|"released"}`
-- **Heartbeat**: Periodic status with uptime, RSSI, free heap
+## BLE Onboarding Protocol
 
-## Use Cases
+BLE service:
 
-### Payment Terminal
-Display transaction amounts, show QR codes for mobile payment, beep on success.
+- Service UUID: `4fafc201-1fb5-459e-8fcc-c5c9c331914b`
+- Command characteristic: `beb5483e-36e1-4688-b7f5-ea07361b26a8`
+- Status characteristic: `beb5483e-36e1-4688-b7f5-ea07361b26a9`
+- Device name: `OpenClaw-Node`
 
-### Kitchen Order Display  
-Show incoming orders, button to mark complete, audio alerts for new orders.
+Recognized BLE commands:
 
-### IoT Sensor Hub
-Read sensors via Grove connectors, display readings, report to gateway.
+- `OTP_REQUEST`
+- `OTP_VERIFY:<6-digit-code>`
+- `WIFI_SSID:{ssid}\nWIFI_PASS:{password}`
+- `WIFI_STATUS`
+- `WS_STATUS`
+- `STATUS`
+- `RESTART`
 
-### Status Badge
-Wearable device showing system status, alerts, notifications.
+Typical BLE status responses:
 
-## Architecture
+- `OTP:<code>`
+- `OTP_OK`
+- `OTP_FAIL`
+- `OTP_EXPIRED`
+- `WIFI_CONNECTED`
+- `WIFI_FAILED`
+- `WIFI_DISCONNECTED`
+- `WS_CONNECTED`
+- `WS_DISCONNECTED`
 
-```
-┌─────────────────────┐     WiFi/WebSocket     ┌──────────────────┐
-│  ESP32-C3 Node      │ ◄────────────────────► │ OpenClaw Gateway │
-│                     │                         │                  │
-│  • OLED Display     │     JSON-RPC Messages   │  • AI Model      │
-│  • Button           │                         │  • Sessions      │
-│  • Buzzer           │                         │  • Channels      │
-│  • Sensors          │                         │                  │
-└─────────────────────┘                         └──────────────────┘
-```
+## Gateway Auth Model
 
-## Development
+The node does not send a plain `connect` immediately after opening the socket.
 
-### Project Structure
+Instead it:
 
-```
+1. Opens the websocket transport through Cloudflare Access
+2. Waits for `connect.challenge`
+3. Signs the v3 device payload with its Ed25519 private key
+4. Sends authenticated `connect`
+5. Persists `hello-ok.auth.deviceToken` after successful pairing
+
+Device identity details:
+
+- `device.id` is `sha256(raw_public_key)` in lowercase hex
+- `device.publicKey` is base64url of the raw 32-byte Ed25519 public key
+- the raw Ed25519 seed is stored in NVS for stable identity across reboots
+
+## Supported Gateway Commands
+
+The current production firmware supports:
+
+- `esp.ping`
+- `esp.gpio.read`
+- `esp.gpio.write`
+- `esp.adc.read`
+- `esp.restart`
+- `canvas.show`
+- `canvas.clear`
+- `audio.beep`
+- `system.info`
+
+It also emits:
+
+- `input.button`
+
+## Repository Layout
+
+```text
 openclaw-esp32c3-xiao-node/
+├── .github/
+│   └── workflows/
 ├── src/
-│   ├── main.cpp          # Main firmware
-│   ├── config.h          # Your config (gitignored)
-│   └── config.h.example  # Template config
-├── platformio.ini        # PlatformIO configuration
+│   ├── config.defaults.h
+│   ├── config.h.example
+│   ├── hardware_smoke_test.cpp
+│   └── main.cpp
+├── platformio.ini
 ├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── LICENSE
 ```
 
-### Dependencies
+## Validation Gates
 
-- [U8g2](https://github.com/olikraus/u8g2) — OLED display driver
-- [ArduinoJson](https://github.com/bblanchon/ArduinoJson) — JSON parsing
-- [WebSockets](https://github.com/Links2004/arduinoWebSockets) — WebSocket client
+Production firmware:
 
-## Contributing
+```bash
+pio run -e xiao_esp32c3
+```
 
-1. Fork the repo
-2. Create a feature branch
-3. Make your changes
-4. Submit a PR
+Smoke-test firmware:
 
-This project is designed to be upstreamed to the main [OpenClaw](https://github.com/openclaw/openclaw) repository.
+```bash
+pio run -e hardware_smoke_test
+```
+
+Static checks:
+
+```bash
+pio check --skip-packages
+```
+
+## Release Flow
+
+Tag-based release example:
+
+```bash
+git checkout main
+git pull
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+The current GitHub release workflow builds the production firmware automatically from tags.
+
+## Security
+
+- Never commit `src/config.h`
+- Treat the gateway bootstrap token as a bootstrap secret only
+- Rotate Cloudflare Access service tokens if exposed
+- Prefer `GATEWAY_CA_CERT_PEM` for stronger TLS verification
+- Redact serial logs before sharing if they contain device identifiers or network details
+
+## Community
+
+- Support the project: https://buymeacoffee.com/heysalad
+- Star the repo: https://github.com/chilu18/openclaw-esp32c3-xiao-node/stargazers
+- Open an issue: https://github.com/chilu18/openclaw-esp32c3-xiao-node/issues
+- Submit a pull request: https://github.com/chilu18/openclaw-esp32c3-xiao-node/pulls
 
 ## License
 
-MIT License — See [LICENSE](LICENSE)
-
-## Credits
-
-- [OpenClaw](https://github.com/openclaw/openclaw) — The AI assistant framework
-- [Seeed Studio](https://www.seeedstudio.com/) — XIAO hardware
-- [HeySalad](https://heysalad.com) — Initial development
-
----
-
-Built with ✨ by Julia & Peter @ HeySalad
+MIT License. See [LICENSE](LICENSE).

@@ -1,3 +1,5 @@
+
+
 # OpenClaw ESP32-C3 XIAO Node
 
 > OpenClaw node firmware for the Seeed Studio XIAO ESP32-C3 and XIAO Expansion Board, with BLE onboarding, OTP pairing, WiFi provisioning, and Cloudflare Access protected gateway connectivity.
@@ -160,6 +162,7 @@ Expected checks:
 
 - OLED detected on `0x3C`
 - RTC detected on `0x51`
+- Grove Vision AI V2 detected on `0x62`
 - speaker test tones
 - button press and release events in serial output
 
